@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  reverse-proxy:
+    image: traefik:v3.1
+    command: --api.insecure=true --providers.docker
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      custom-net:
+        ipv4_address: 100.0.0.10
+
+  whoami:
+    image: traefik/whoami
+    labels:
+      - "traefik.http.routers.whoami.rule=Host(`whoami.docker.localhost`)"
+    networks:
+      custom-net:
+        ipv4_address: 100.0.0.20
+
+  cppserver:
+    build:
+      context: ./cppserver
+      dockerfile: Dockerfile
+    container_name: cppserver-container
+    networks:
+      custom-net:
+        ipv4_address: 100.0.0.30
+    volumes:
+      - ./../:/app        
+
+networks:
+  custom-net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 100.0.0.0/24
